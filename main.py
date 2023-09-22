@@ -4,6 +4,7 @@ from email import policy
 import openai
 import smtplib
 import ssl
+from email.message import EmailMessage
 
 from dotenv import load_dotenv
 import os
@@ -34,7 +35,7 @@ def get_email_response_from_chatgpt(email_message: str) -> dict:
 
 
 def get_email_to_forward_to(topic: str) -> str:
-    prompt = f'Consider the text delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report"] is the text most similar to. Your response should only contain the topic name, nothing else.'
+    prompt = f'Consider the text delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales] is the text most similar to. Your response should only contain the topic name, nothing else.'
     topic = request_chat_gpt(prompt)
     return os.getenv(f"RECIEVER_EMAIL_{topic.upper().replace(' ', '_')}")
 
@@ -91,14 +92,17 @@ if __name__ == "__main__":
             subject_line = create_subject_line(res)
             logging.info(f"Got subject line from chatgpt {subject_line}")
             new_subject_line = subject_line + " " + email_msg['Subject']
-            new_message = f"Subject: {new_subject_line}\n{body}"
             context = ssl.create_default_context()
             reciever_email = get_email_to_forward_to(res['topic'])
+            em = EmailMessage()
+            em.set_content(body)
+            em['To'] = reciever_email
+            em['From'] = sender_email
+            em['Subject'] = new_subject_line
             with smtplib.SMTP_SSL(smtp_server, int(port), context=context) as server:
                 logging.info(f"Forwarding email to {reciever_email}")
                 server.login(sender_email, password)
-                server.sendmail(
-                    sender_email, reciever_email, new_message)
+                server.send_message(em)
 
         logging.info("Logging out")
         mail.logout()
