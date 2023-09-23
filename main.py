@@ -1,3 +1,8 @@
+import logging
+import json
+import time
+import os
+from dotenv import load_dotenv
 import imaplib
 import email
 from email import policy
@@ -6,12 +11,8 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 import nltk
+nltk.download('punkt')
 
-from dotenv import load_dotenv
-import os
-import time
-import json
-import logging
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
@@ -31,13 +32,15 @@ def request_chat_gpt(prompt: str) -> str:
 
 
 def get_email_response_from_chatgpt(email_message: str) -> dict:
-    prompt = f'Consider the email delimited by triple backticks. This email is sent to my construction company. I need as much information identified within this email, comprising of small snippets of descriptive information that will be appended (at the start) of the email subject (when it is forwarded), delimited by **. The information I am looking for (where possible) is "company sending the email", "email topic", "site/project name", "site/project plot number", "site/project location". Return your response in JSON format, with keys "company", "topic", "project_name", "project_plot", "project_location". Your output should only contain the JSON, nothing else. ```\n{email_message}\n```'
-    if len(nltk.word_tokenize(prompt)) > 4097:
-        logging.info(
-            "Prompt contains more than 4097 tokens, chopping off email from the middle")
-        email_split = email_message.split(" ")
-        email_message = " ".join(email_split[:2097] + email_split[-1000:])
-    return json.loads(request_chat_gpt(prompt))
+    while True:
+        prompt = f'Consider the email delimited by triple backticks. This email is sent to my construction company. I need as much information identified within this email, comprising of small snippets of descriptive information that will be appended (at the start) of the email subject (when it is forwarded), delimited by **. The information I am looking for (where possible) is "company sending the email", "email topic", "site/project name", "site/project plot number", "site/project location". Return your response in JSON format, with keys "company", "topic", "project_name", "project_plot", "project_location". Your output should only contain the JSON, nothing else. ```\n{email_message}\n```'
+        if len(nltk.word_tokenize(prompt)) > 4097:
+            logging.info(
+                "Prompt contains more than 4097 tokens, chopping off email from the middle")
+            email_split = email_message.split(" ")
+            email_message = " ".join(email_split[:2097] + email_split[-1000:])
+        else:
+            return json.loads(request_chat_gpt(prompt))
 
 
 def get_email_to_forward_to(topic: str) -> str:
