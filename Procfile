@@ -1,1 +1,1 @@
-worker: python main.py
+worker: cd backend && python email_forwarder.py
