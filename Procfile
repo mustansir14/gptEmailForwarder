@@ -1,1 +1,1 @@
-worker: cd backend && python email_forwarder.py
+web: honcho start -f ProcfileHoncho

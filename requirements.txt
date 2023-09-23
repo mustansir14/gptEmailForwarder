@@ -11,6 +11,7 @@ exceptiongroup==1.1.3
 fastapi==0.103.1
 frozenlist==1.4.0
 h11==0.14.0
+honcho==1.1.0
 idna==3.4
 multidict==6.0.4
 openai==0.28.0
