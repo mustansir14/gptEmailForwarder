@@ -41,7 +41,7 @@ def get_email_response_from_chatgpt(email_message: str) -> dict:
 
 
 def get_email_to_forward_to(email_message: str) -> str:
-    prompt = f'Consider the email delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales"] is the email most similar to. Your response should only contain the topic name, nothing else.\n```{email_message}\n```'
+    prompt = f'Consider the email delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales"] does the email belong to. Your response should only contain the topic name, nothing else.\n```{email_message}\n```'
     topic = request_chat_gpt(prompt)
     return os.getenv(f"RECIEVER_EMAIL_{topic.upper().replace(' ', '_')}")
 
