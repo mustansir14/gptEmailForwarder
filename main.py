@@ -40,8 +40,8 @@ def get_email_response_from_chatgpt(email_message: str) -> dict:
             return json.loads(request_chat_gpt(prompt))
 
 
-def get_email_to_forward_to(topic: str) -> str:
-    prompt = f'Consider the text delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales"] is the text most similar to. Your response should only contain the topic name, nothing else.\n```{topic}\n```'
+def get_email_to_forward_to(email_message: str) -> str:
+    prompt = f'Consider the email delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales"] is the email most similar to. Your response should only contain the topic name, nothing else.\n```{email_message}\n```'
     topic = request_chat_gpt(prompt)
     return os.getenv(f"RECIEVER_EMAIL_{topic.upper().replace(' ', '_')}")
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             logging.info(f"Got subject line from chatgpt {subject_line}")
             new_subject_line = subject_line + " " + email_msg['Subject']
             context = ssl.create_default_context()
-            reciever_email = get_email_to_forward_to(res['topic'])
+            reciever_email = get_email_to_forward_to(email_message)
             em = EmailMessage()
             em.set_content(body)
             em['To'] = reciever_email
