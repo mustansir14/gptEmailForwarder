@@ -82,6 +82,7 @@ if __name__ == "__main__":
         if not config:
             logging.error("Config not set!")
             time.sleep(5)
+            continue
         config_json = config.config_json
         openai.api_key = config_json["openai_api_key"]
         imap_host = config_json["imap_host"]
