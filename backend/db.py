@@ -22,7 +22,9 @@ class Config(Base):
     config_json = mapped_column(JSON)
 
 
-engine = create_engine(os.getenv("DATABASE_URL"))
+db_url = os.getenv("DATABASE_URL")
+db_url = db_url.replace("postgres://", "postgresql+psycopg2://")
+engine = create_engine(db_url)
 Session = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)
