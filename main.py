@@ -32,7 +32,7 @@ def request_chat_gpt(prompt: str) -> str:
 def get_email_response_from_chatgpt(email_message: str) -> dict:
     while True:
         prompt = f'Consider the email delimited by triple backticks. This email is sent to my construction company. I need as much information identified within this email, comprising of small snippets of descriptive information that will be appended (at the start) of the email subject (when it is forwarded), delimited by **. The information I am looking for (where possible) is "company sending the email", "email topic", "site/project name", "site/project plot number", "site/project location". Return your response in JSON format, with keys "company", "topic", "project_name", "project_plot", "project_location". Your output should only contain the JSON, nothing else. ```\n{email_message}\n```'
-        if len(prompt.split(" ")) > 3073:  # 4097 tokens = 3073 words
+        if len(prompt.split(" ")) > 1500:
             logging.info(
                 "Prompt contains more than 4097 tokens, chopping off email from the middle")
             email_message = remove_middle_words(email_message)
@@ -41,7 +41,7 @@ def get_email_response_from_chatgpt(email_message: str) -> dict:
 
 
 def get_email_to_forward_to(topic: str) -> str:
-    prompt = f'Consider the text delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales] is the text most similar to. Your response should only contain the topic name, nothing else.'
+    prompt = f'Consider the text delimited by triple backticks. Determine which of these topics ["tender", "variation", "order", "advertising", "customer care", "audit", "report", "sales"] is the text most similar to. Your response should only contain the topic name, nothing else.\n```{topic}\n```'
     topic = request_chat_gpt(prompt)
     return os.getenv(f"RECIEVER_EMAIL_{topic.upper().replace(' ', '_')}")
 
