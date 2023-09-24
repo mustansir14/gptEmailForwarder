@@ -9,6 +9,7 @@ import smtplib
 import ssl
 from email.message import EmailMessage
 from db import get_config
+from typing import List
 
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
@@ -35,8 +36,8 @@ def get_email_response_from_chatgpt(email_message: str, prompt: str) -> dict:
             return json.loads(request_chat_gpt(prompt))
 
 
-def get_email_to_forward_to(email_message: str, topic_emails: dict, prompt: str) -> str:
-    topics = "\n".join(list(topic_emails.keys()))
+def get_email_to_forward_to(email_message: str, topic_emails: List[dict], prompt: str) -> str:
+    topics = "\n".join(topic_email['name'] for topic_email in topic_emails)
     while True:
         prompt = prompt.replace("{topics}", topics).replace(
             "{email_message}", email_message)
@@ -46,7 +47,13 @@ def get_email_to_forward_to(email_message: str, topic_emails: dict, prompt: str)
             email_message = remove_middle_words(email_message)
         else:
             topic = request_chat_gpt(prompt)
-            return topic_emails[topic]
+            return get_email_by_name(topic_emails, topic)
+
+
+def get_email_by_name(topic_emails: List[dict], name: str):
+    for topic_email in topic_emails:
+        if topic_email['name'] == name:
+            return topic_email['email']
 
 
 def create_subject_line(response: dict) -> str:
