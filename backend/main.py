@@ -1,7 +1,15 @@
 from fastapi import FastAPI, Request, HTTPException
-from db import update_or_create_config
+from db import update_or_create_config, get_config_from_db
 
 app = FastAPI()
+
+
+@app.get("/")
+async def get_config():
+    config = get_config_from_db()
+    if not config:
+        raise HTTPException(status_code=404, detail="No config found")
+    return config.config_json
 
 
 @app.post("/")

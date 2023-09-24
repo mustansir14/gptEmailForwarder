@@ -30,13 +30,13 @@ Session = sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 
 
-def get_config() -> Config:
+def get_config_from_db() -> Config:
     with Session() as session:
         return session.scalar(select(Config))
 
 
 def update_or_create_config(config_json: dict) -> Config:
-    config = get_config()
+    config = get_config_from_db()
     if config:
         config.config_json = config_json
     else:
