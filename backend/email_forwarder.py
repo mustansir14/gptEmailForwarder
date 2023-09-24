@@ -24,9 +24,9 @@ def request_chat_gpt(prompt: str) -> str:
     return response.choices[0].message["content"]
 
 
-def get_email_response_from_chatgpt(email_message: str) -> dict:
+def get_email_response_from_chatgpt(email_message: str, prompt: str) -> dict:
     while True:
-        prompt = f'Consider the email delimited by triple backticks. This email is sent to my construction company. I need as much information identified within this email, comprising of small snippets of descriptive information that will be appended (at the start) of the email subject (when it is forwarded), delimited by **. The information I am looking for (where possible) is "company sending the email", "email topic", "site/project name", "site/project plot number", "site/project location". Return your response in JSON format, with keys "company", "topic", "project_name", "project_plot", "project_location". Your output should only contain the JSON, nothing else. ```\n{email_message}\n```'
+        prompt = prompt.replace("{email_message}", email_message)
         if len(prompt.split(" ")) > 1500:
             logging.info(
                 "Prompt contains more than 4097 tokens, chopping off email from the middle")
@@ -35,11 +35,18 @@ def get_email_response_from_chatgpt(email_message: str) -> dict:
             return json.loads(request_chat_gpt(prompt))
 
 
-def get_email_to_forward_to(email_message: str, topic_emails: dict) -> str:
+def get_email_to_forward_to(email_message: str, topic_emails: dict, prompt: str) -> str:
     topics = "\n".join(list(topic_emails.keys()))
-    prompt = f'Consider the email delimited by triple backticks. Determine which of these topics:\n\n{topics}\n\n does the email belong to. Your response should only contain the topic name, nothing else.\n```{email_message}\n```'
-    topic = request_chat_gpt(prompt)
-    return topic_emails[topic]
+    while True:
+        prompt = prompt.replace("{topics}", topics).replace(
+            "{email_message}", email_message)
+        if len(prompt.split(" ")) > 1500:
+            logging.info(
+                "Prompt contains more than 4097 tokens, chopping off email from the middle")
+            email_message = remove_middle_words(email_message)
+        else:
+            topic = request_chat_gpt(prompt)
+            return topic_emails[topic]
 
 
 def create_subject_line(response: dict) -> str:
@@ -94,6 +101,8 @@ if __name__ == "__main__":
         sender_email = imap_user
         password = imap_pass
         topics_emails = config_json['receiver_emails']
+        prompt_subject_line = config_json['prompt_subject_line']
+        prompt_forward_email = config_json['prompt_forward_email']
 
         logging.info("Connecting to IMAP")
         # init imap connection
@@ -126,13 +135,14 @@ if __name__ == "__main__":
                     body += part.get_content() + "\n"
 
             email_message += body
-            res = get_email_response_from_chatgpt(email_message)
+            res = get_email_response_from_chatgpt(
+                email_message, prompt_subject_line)
             subject_line = create_subject_line(res)
             logging.info(f"Got subject line from chatgpt {subject_line}")
             new_subject_line = subject_line + " " + email_msg['Subject']
             context = ssl.create_default_context()
             reciever_email = get_email_to_forward_to(
-                email_message, topics_emails)
+                email_message, topics_emails, prompt_forward_email)
             em = EmailMessage()
             em.set_content(body)
             em['To'] = reciever_email
