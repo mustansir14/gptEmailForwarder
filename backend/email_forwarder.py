@@ -8,7 +8,7 @@ import openai
 import smtplib
 import ssl
 from email.message import EmailMessage
-from db import get_config
+from db import get_config_from_db
 from typing import List
 
 logging.basicConfig(format='%(asctime)s %(message)s',
@@ -92,7 +92,7 @@ def remove_middle_words(text):
 if __name__ == "__main__":
 
     while True:
-        config = get_config()
+        config = get_config_from_db()
         if not config:
             logging.error("Config not set!")
             time.sleep(5)
