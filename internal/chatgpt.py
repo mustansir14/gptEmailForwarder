@@ -1,6 +1,6 @@
 import openai
-from internal.data_types import EmailDetails, ReceiverEmail
-from internal.utils import is_prompt_long, remove_middle_words, get_email_by_name
+from internal.data_types import EmailDetails, ReceiverEmail, Project
+from internal.utils import is_prompt_long, remove_middle_words, get_email_by_name, get_project_sheet_url_by_name
 from typing import List, Tuple
 
 
@@ -39,3 +39,16 @@ class ChatGPT:
             else:
                 topic = self.request(prompt)
                 return get_email_by_name(topic_emails, topic), topic
+
+    def get_sheet_url_to_add_to(self, email_message: str, projects: List[Project], prompt: str) -> str:
+
+        projects = "\n".join(project.name for project in projects)
+        while True:
+            prompt = prompt.replace("{projects}", projects).replace(
+                "{email_message}", email_message
+            )
+            if is_prompt_long(prompt):
+                email_message = remove_middle_words(email_message)
+            else:
+                project = self.request(prompt)
+                return get_project_sheet_url_by_name(projects, project)

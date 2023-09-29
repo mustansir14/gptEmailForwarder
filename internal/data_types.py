@@ -41,6 +41,7 @@ class Configuration:
     smtp_port: int
     prompt_subject_line: str
     prompt_forward_email: str
+    prompt_project: str
     receiver_emails: List[ReceiverEmail]
     projects: List[Project]
     misc_sheet_url: str
