@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 import openai
 
-from internal.data_types import ReceiverEmail
+from internal.data_types import ReceiverEmail, EmailDetails
 
 
 def request_chat_gpt(prompt: str) -> str:
@@ -22,14 +22,13 @@ def is_prompt_long(prompt: str) -> bool:
     return len(prompt.split(" ")) > 1500
 
 
-def get_subject_line_from_chatgpt(email_message: str, prompt: str) -> dict:
+def get_email_details_from_chatgpt(email_message: str, prompt: str) -> EmailDetails:
     while True:
         prompt = prompt.replace("{email_message}", email_message)
         if is_prompt_long(prompt):
             email_message = remove_middle_words(email_message)
         else:
-            res = json.loads(request_chat_gpt(prompt))
-            return create_subject_line(res)
+            return EmailDetails.from_json(request_chat_gpt(prompt))
 
 
 def get_email_and_topic_to_forward_to(
@@ -53,8 +52,8 @@ def get_email_by_name(topic_emails: List[ReceiverEmail], name: str):
             return topic_email.email
 
 
-def create_subject_line(response: dict) -> str:
-    return f"***{response['topic']}*** - {response['company']} - {response['project_name']} - {response['project_plot']} -"
+def create_subject_line(email_details: EmailDetails) -> str:
+    return f"***{email_details.topic}*** - {email_details.company} - {email_details.project_name} - {email_details.project_plot} - {email_details.project_location} - "
 
 
 def remove_middle_words(text):
@@ -76,7 +75,7 @@ def remove_middle_words(text):
     if end > n:
         end = n
     # Remove the middle portion of words
-    del words[start : end + 1]
+    del words[start: end + 1]
     # Reconstruct the text with remaining words
     result_text = " ".join(words)
     return result_text

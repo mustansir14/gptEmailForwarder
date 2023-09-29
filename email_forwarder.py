@@ -30,6 +30,8 @@ class EmailForwarder:
 
         for email_msg in self.get_new_emails():
             topic = self.forward_new_email(email_msg)
+            if topic in ["order", "variation"]:
+                self.add_to_sheet()
 
     def forward_new_email(self, email_msg: Message) -> str:
         """
@@ -45,9 +47,10 @@ class EmailForwarder:
         body = get_body_from_email_msg(email_msg)
         email_message += body
 
-        subject_line = get_subject_line_from_chatgpt(
+        email_details = get_email_details_from_chatgpt(
             email_message, self.config.prompt_subject_line
         )
+        subject_line = create_subject_line(email_details)
         logging.info(f"Got subject line from chatgpt {subject_line}")
         reciever_email, topic = get_email_and_topic_to_forward_to(
             email_message,

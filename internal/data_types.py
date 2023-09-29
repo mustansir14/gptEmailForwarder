@@ -57,3 +57,13 @@ class ProjectItem:
     def __post_init__(self):
         if type(self.rate) == float and type(self.quantity) == int:
             self.total = self.rate * self.quantity
+
+
+@dataclass_json
+@dataclass
+class EmailDetails:
+    company: str
+    topic: str
+    project_name: str
+    project_plot: int
+    project_location: str
