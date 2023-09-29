@@ -1,25 +1,12 @@
-from sqlalchemy import create_engine
-from sqlalchemy import JSON
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
 import os
+
 from dotenv import load_dotenv
-from sqlalchemy import select
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import sessionmaker
+
+from internal.models import Base, Config
 
 load_dotenv()
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-class Config(Base):
-    __tablename__ = "config"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    config_json = mapped_column(JSON)
 
 
 db_url = os.getenv("DATABASE_URL")

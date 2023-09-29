@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Request, HTTPException
-from db import update_or_create_config, get_config_from_db
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+
+from internal.db import get_config_from_db, update_or_create_config
 
 app = FastAPI()
 
