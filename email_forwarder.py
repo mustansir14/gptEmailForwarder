@@ -35,6 +35,8 @@ class EmailForwarder:
             # if topic in ["order", "variation"]:
             #     self.add_to_sheet()
 
+    # def add_to_sheet(self, email_details: EmailDetails) -> None:
+
     def process_email(self, email_msg: Message) -> EmailDetails:
         """
         Processes and extracts details from email using chatgpt

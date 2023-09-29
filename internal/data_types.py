@@ -43,10 +43,11 @@ class Configuration:
     prompt_forward_email: str
     receiver_emails: List[ReceiverEmail]
     projects: List[Project]
+    misc_sheet_url: str
 
 
 @dataclass
-class ProjectItem:
+class ProjectItemGSheet:
     date_added: date
     plot_no: int
     item_description: str
