@@ -13,7 +13,8 @@ import openai
 
 from internal.data_types import Configuration, ReceiverEmail
 from internal.db import get_config_from_db
-from internal.email_forwarder_utils import *
+from internal.utils import *
+from internal.chatgpt import ChatGPT
 
 logging.basicConfig(
     format="%(asctime)s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO
@@ -29,14 +30,38 @@ class EmailForwarder:
         self.load_config()
 
         for email_msg in self.get_new_emails():
-            topic = self.forward_new_email(email_msg)
-            if topic in ["order", "variation"]:
-                self.add_to_sheet()
+            email_details = self.process_email(email_msg)
+            topic = self.forward_email(email_details, email_msg)
+            # if topic in ["order", "variation"]:
+            #     self.add_to_sheet()
 
-    def forward_new_email(self, email_msg: Message) -> str:
+    def process_email(self, email_msg: Message) -> EmailDetails:
         """
-        Forwards the email to the appropriate reciever based on topic. Returns the topic for further processing
+        Processes and extracts details from email using chatgpt
         """
+        email_message, _ = self.construct_email_msg_for_chatgpt(email_msg)
+        return self.chatgpt.get_email_details(
+            email_message, self.config.prompt_subject_line
+        )
+
+    def forward_email(self, email_details: EmailDetails, email_msg: Message) -> str:
+        """
+        Forwards the email to the appropriate reciever based on topic. Returns topic for further processing
+        """
+
+        subject_line = create_subject_line(email_details)
+        logging.info(f"Got subject line from chatgpt {subject_line}")
+        email_message, body = self.construct_email_msg_for_chatgpt(email_msg)
+        reciever_email, topic = self.chatgpt.get_email_and_topic_to_forward_to(
+            email_message,
+            self.config.receiver_emails,
+            self.config.prompt_forward_email,
+        )
+        new_subject_line = subject_line + " " + email_msg["Subject"]
+        self.send_email(reciever_email, new_subject_line, body)
+        return topic
+
+    def construct_email_msg_for_chatgpt(self, email_msg: Message) -> Tuple[str, str]:
         email_message = "From: %s\nTo: %s\nDate: %s\nSubject: %s\n\n" % (
             str(email_msg["From"]),
             str(email_msg["To"]),
@@ -46,20 +71,7 @@ class EmailForwarder:
 
         body = get_body_from_email_msg(email_msg)
         email_message += body
-
-        email_details = get_email_details_from_chatgpt(
-            email_message, self.config.prompt_subject_line
-        )
-        subject_line = create_subject_line(email_details)
-        logging.info(f"Got subject line from chatgpt {subject_line}")
-        reciever_email, topic = get_email_and_topic_to_forward_to(
-            email_message,
-            self.config.receiver_emails,
-            self.config.prompt_forward_email,
-        )
-        new_subject_line = subject_line + " " + email_msg["Subject"]
-        self.send_email(reciever_email, new_subject_line, body)
-        return topic
+        return email_message, body
 
     def load_config(self) -> None:
         """
@@ -70,7 +82,7 @@ class EmailForwarder:
             raise Exception("Config not set!")
         config_json = config.config_json
         self.config: Configuration = Configuration.from_dict(config_json)
-        openai.api_key = self.config.openai_api_key
+        self.chatgpt = ChatGPT(self.config.openai_api_key)
 
     def get_new_emails(self) -> Iterator[Message]:
         """
