@@ -1,11 +1,13 @@
-import openai
-from internal.data_types import EmailDetails, ReceiverEmail, EmailDetails, Project
-from internal.utils import is_prompt_long, remove_middle_words, get_email_by_name, get_project_sheet_url
 from typing import List, Tuple
+
+import openai
+
+from internal.data_types import EmailDetails, Project, ReceiverEmail
+from internal.utils import (get_email_by_name, get_project_sheet_url,
+                            is_prompt_long, remove_middle_words)
 
 
 class ChatGPT:
-
     def __init__(self, api_key: str) -> None:
         openai.api_key = api_key
 
@@ -32,9 +34,9 @@ class ChatGPT:
             else:
                 return EmailDetails.from_json(self.request(prompt))
 
-    def get_email_and_topic_to_forward_to(self,
-                                          email_message: str, topic_emails: List[ReceiverEmail], prompt: str
-                                          ) -> Tuple[str, str]:
+    def get_email_and_topic_to_forward_to(
+        self, email_message: str, topic_emails: List[ReceiverEmail], prompt: str
+    ) -> Tuple[str, str]:
         """
         Request chatgpt to find matching topic and email to forward to for the given email message
         """
@@ -49,7 +51,13 @@ class ChatGPT:
                 topic = self.request(prompt)
                 return get_email_by_name(topic_emails, topic), topic
 
-    def get_sheet_url_and_project_to_add_to(self, email_message_text: str, email_details: EmailDetails, projects: List[Project], prompt: str) -> Tuple[str | None, str | None]:
+    def get_sheet_url_and_project_to_add_to(
+        self,
+        email_message_text: str,
+        email_details: EmailDetails,
+        projects: List[Project],
+        prompt: str,
+    ) -> Tuple[str | None, str | None]:
         """
         Request chatgpt to get matching project and its corresponding sheet url for the given email message. Will return None if no matching project
         """
@@ -63,4 +71,6 @@ class ChatGPT:
                 email_message = remove_middle_words(email_message)
             else:
                 project = self.request(prompt)
-                return get_project_sheet_url(projects, project, email_details.project_plot, email_message_text)
+                return get_project_sheet_url(
+                    projects, project, email_details.project_plot, email_message_text
+                )

@@ -2,8 +2,7 @@ import logging
 from email.message import Message
 from typing import List, Tuple
 
-
-from internal.data_types import ReceiverEmail, EmailDetails, Project, PlotRange
+from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail
 
 
 def is_prompt_long(prompt: str) -> bool:
@@ -16,7 +15,9 @@ def get_email_by_name(topic_emails: List[ReceiverEmail], name: str) -> str:
             return topic_email.email
 
 
-def get_project_sheet_url(projects: List[Project], name: str, plot: int, email_msg: str) -> Tuple[str | None, str | None]:
+def get_project_sheet_url(
+    projects: List[Project], name: str, plot: int, email_msg: str
+) -> Tuple[str | None, str | None]:
     """
     Returns project sheet url and name based on email details. First match is done by project name and plot, if none matched, then match by contacts and plot
     """
@@ -27,8 +28,9 @@ def get_project_sheet_url(projects: List[Project], name: str, plot: int, email_m
 
     # search by contacts and plot
     for project in projects:
-        linked_contacts = [contact.strip()
-                           for contact in project.linked_contacts.split(",")]
+        linked_contacts = [
+            contact.strip() for contact in project.linked_contacts.split(",")
+        ]
 
         contacts_found = 0
         for contact in linked_contacts:
@@ -75,7 +77,7 @@ def remove_middle_words(text):
     if end > n:
         end = n
     # Remove the middle portion of words
-    del words[start: end + 1]
+    del words[start : end + 1]
     # Reconstruct the text with remaining words
     result_text = " ".join(words)
     return result_text

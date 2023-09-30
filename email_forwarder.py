@@ -4,16 +4,16 @@ import logging
 import smtplib
 import ssl
 import time
+from datetime import date
 from email import policy
 from email.message import EmailMessage, Message
 from typing import Iterator, Tuple
-from datetime import date
 
+from internal.chatgpt import ChatGPT
 from internal.data_types import Configuration, ProjectItemGSheet
 from internal.db import get_config_from_db
-from internal.utils import *
-from internal.chatgpt import ChatGPT
 from internal.gsheet import GoogleSheet
+from internal.utils import *
 
 logging.basicConfig(
     format="%(asctime)s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO
@@ -29,8 +29,7 @@ class EmailForwarder:
         self.load_config()
 
         for email_msg in self.get_new_emails():
-            email_msg_text, body = self.construct_email_msg_for_chatgpt(
-                email_msg)
+            email_msg_text, body = self.construct_email_msg_for_chatgpt(email_msg)
             email_details = self.process_email(email_msg_text)
             reciever_email, topic = self.chatgpt.get_email_and_topic_to_forward_to(
                 email_msg_text,
@@ -40,20 +39,26 @@ class EmailForwarder:
             if topic in ["order", "variation"]:
                 self.add_to_sheet(email_msg_text, email_details)
             self.forward_email(
-                reciever_email, email_details, email_msg["Subject"], body)
+                reciever_email, email_details, email_msg["Subject"], body
+            )
 
-    def add_to_sheet(self, email_message_text: str, email_details: EmailDetails) -> None:
-
-        logging.info(
-            "Finding project based on name, plot and/or linked contacts")
+    def add_to_sheet(
+        self, email_message_text: str, email_details: EmailDetails
+    ) -> None:
+        logging.info("Finding project based on name, plot and/or linked contacts")
         sheet_url, project = self.chatgpt.get_sheet_url_and_project_to_add_to(
-            email_message_text, email_details, self.config.projects, self.config.prompt_project)
+            email_message_text,
+            email_details,
+            self.config.projects,
+            self.config.prompt_project,
+        )
         if sheet_url is None:
             sheet_url = self.config.misc_sheet_url
             project = "Misc"
         if not sheet_url:
             logging.error(
-                "No matching project and misc sheet url not set. Can't add project item to gsheet.")
+                "No matching project and misc sheet url not set. Can't add project item to gsheet."
+            )
             return
         logging.info(f"Project matched: {project}")
         email_details.project_name = project
@@ -61,13 +66,20 @@ class EmailForwarder:
             gsheet = GoogleSheet(sheet_url)
         except PermissionError:
             logging.error(
-                f"Permission error accessing Gsheet for project {project}. Can't add project item")
+                f"Permission error accessing Gsheet for project {project}. Can't add project item"
+            )
             return
         project_item = ProjectItemGSheet(
-            date_added=date.today(), plot_no=email_details.project_plot, item_description=email_details.item_description, quantity=email_details.quantity, rate=email_details.rate)
+            date_added=date.today(),
+            plot_no=email_details.project_plot,
+            item_description=email_details.item_description,
+            quantity=email_details.quantity,
+            rate=email_details.rate,
+        )
         gsheet.insert_project_item(project_item)
         logging.info(
-            f"Added project item with description {project_item.item_description} to gsheet for project {project}")
+            f"Added project item with description {project_item.item_description} to gsheet for project {project}"
+        )
 
     def process_email(self, email_msg_text: str) -> EmailDetails:
         """
@@ -77,7 +89,9 @@ class EmailForwarder:
             email_msg_text, self.config.prompt_subject_line
         )
 
-    def forward_email(self, reciever_email: str, email_details: EmailDetails, subject: str, body: str) -> None:
+    def forward_email(
+        self, reciever_email: str, email_details: EmailDetails, subject: str, body: str
+    ) -> None:
         """
         Forwards the email to the given reciever. Modifies subject based on email details.
         """
@@ -116,8 +130,7 @@ class EmailForwarder:
         An iterator to login to IMAP, yield new emails and logout
         """
         logging.info("Connecting to IMAP")
-        mail = imaplib.IMAP4_SSL(
-            self.config.imap_host, int(self.config.imap_port))
+        mail = imaplib.IMAP4_SSL(self.config.imap_host, int(self.config.imap_port))
         rc, resp = mail.login(self.config.email, self.config.password)
         mail.select("Inbox")
         logging.info("Checking for messages")

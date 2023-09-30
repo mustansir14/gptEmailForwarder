@@ -1,9 +1,8 @@
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from internal.models import Base, Config
 from internal.env import Env
-
+from internal.models import Base, Config
 
 db_url = Env.DATABASE_URL
 db_url = db_url.replace("postgres://", "postgresql+psycopg2://")

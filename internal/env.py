@@ -1,5 +1,6 @@
 import os
-from typing import get_type_hints, Union
+from typing import Union, get_type_hints
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,7 +11,8 @@ class AppEnvError(Exception):
 
 
 def _parse_bool(val: Union[str, bool]) -> bool:  # pylint: disable=E1136
-    return val if type(val) == bool else val.lower() in ['true', 'yes', '1']
+    return val if type(val) == bool else val.lower() in ["true", "yes", "1"]
+
 
 # AppEnv class with required fields, default values, type checking, and typecasting for int and bool values
 
@@ -34,7 +36,7 @@ class AppEnv:
             # Raise AppEnvError if required field not supplied
             default_value = getattr(self, field, None)
             if default_value is None and env.get(field) is None:
-                raise AppEnvError('The {} field is required'.format(field))
+                raise AppEnvError("The {} field is required".format(field))
 
             # Cast env var value to expected type and raise AppEnvError on failure
             try:
@@ -46,11 +48,10 @@ class AppEnv:
 
                 self.__setattr__(field, value)
             except ValueError:
-                raise AppEnvError('Unable to cast value of "{}" to type "{}" for "{}" field'.format(
-                    env[field],
-                    var_type,
-                    field
-                )
+                raise AppEnvError(
+                    'Unable to cast value of "{}" to type "{}" for "{}" field'.format(
+                        env[field], var_type, field
+                    )
                 )
 
     def __repr__(self):

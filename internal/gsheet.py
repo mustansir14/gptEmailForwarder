@@ -1,5 +1,5 @@
-from datetime import date
 import json
+from datetime import date
 
 import gspread
 
@@ -10,7 +10,8 @@ from internal.env import Env
 class GoogleSheet:
     def __init__(self, sheet_url: str) -> None:
         self.gc = gspread.service_account_from_dict(
-            json.loads(Env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON))
+            json.loads(Env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON)
+        )
         self.sh = self.gc.open_by_url(sheet_url)
         self.sheet = self.sh.sheet1
 
