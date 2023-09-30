@@ -29,7 +29,6 @@ class GoogleSheet:
             project_item.item_description,
             project_item.quantity,
             project_item.rate,
-            project_item.total,
         ]
         self.sheet.insert_row(new_row, new_index)
 
