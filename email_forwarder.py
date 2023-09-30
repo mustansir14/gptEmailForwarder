@@ -35,7 +35,10 @@ class EmailForwarder:
             # if topic in ["order", "variation"]:
             #     self.add_to_sheet()
 
-    # def add_to_sheet(self, email_details: EmailDetails) -> None:
+    def add_to_sheet(self, email_message: Message) -> None:
+
+        sheet_url = self.chatgpt.get_sheet_url_to_add_to(
+            email_message, self.config.projects, self.config.prompt_project)
 
     def process_email(self, email_msg: Message) -> EmailDetails:
         """

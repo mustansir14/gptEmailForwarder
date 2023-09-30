@@ -1,15 +1,11 @@
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from internal.models import Base, Config
+from internal.env import Env
 
-load_dotenv()
 
-
-db_url = os.getenv("DATABASE_URL")
+db_url = Env.DATABASE_URL
 db_url = db_url.replace("postgres://", "postgresql+psycopg2://")
 engine = create_engine(db_url)
 Session = sessionmaker(bind=engine)

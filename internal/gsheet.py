@@ -1,17 +1,16 @@
-import json
-import os
 from datetime import date
-from typing import List
+import json
 
 import gspread
-from dotenv import load_dotenv
 
 from internal.data_types import ProjectItemGSheet
+from internal.env import Env
 
 
 class GoogleSheet:
-    def __init__(self, credentials: dict, sheet_url: str) -> None:
-        self.gc = gspread.service_account_from_dict(credentials)
+    def __init__(self, sheet_url: str) -> None:
+        self.gc = gspread.service_account_from_dict(
+            json.loads(Env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON))
         self.sh = self.gc.open_by_url(sheet_url)
         self.sheet = self.sh.sheet1
 
@@ -35,10 +34,7 @@ class GoogleSheet:
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    credentials = json.loads(os.getenv("GOOGLE_SERVICE_ACCOUNT_KEY_JSON"))
     gsheet = GoogleSheet(
-        credentials,
         "https://docs.google.com/spreadsheets/d/1p-W6vbGU2312a1_T4xyqBWr7Pz8iwmE2EXa68ex690w/edit#gid=638267015",
     )
     gsheet.insert_project_item(
