@@ -59,6 +59,8 @@ class ProjectItemGSheet:
     def __post_init__(self):
         if type(self.rate) == float and type(self.quantity) == int:
             self.total = self.rate * self.quantity
+        else:
+            self.total = None
 
 
 @dataclass_json
@@ -69,3 +71,6 @@ class EmailDetails:
     project_name: str
     project_plot: int
     project_location: str
+    item_description: str
+    quantity: int
+    rate: float
