@@ -32,7 +32,7 @@ class EmailForwarder:
             email_msg_text, body = self.construct_email_msg_for_chatgpt(
                 email_msg)
             email_details = self.process_email(email_msg_text)
-            reciever_email, topic = self.chatgpt.get_email_and_topic_to_forward_to(
+            reciever_email, topic = self.chatgpt.get_reciever_email_and_topic_to_forward_to(
                 email_msg_text,
                 self.config.receiver_emails,
                 self.config.prompt_forward_email,
@@ -92,7 +92,7 @@ class EmailForwarder:
         )
 
     def forward_email(
-        self, reciever_email: str, email_details: EmailDetails, subject: str, body: str
+        self, reciever_email: ReceiverEmail, email_details: EmailDetails, subject: str, body: str
     ) -> None:
         """
         Forwards the email to the given reciever. Modifies subject based on email details.
@@ -102,7 +102,9 @@ class EmailForwarder:
         logging.info(f"Got subject line from chatgpt {subject_line}")
 
         new_subject_line = subject_line + " " + subject
-        self.send_email(reciever_email, new_subject_line, body)
+        if reciever_email.header:
+            body = reciever_email.header + "\n\n--\n\n" + body
+        self.send_email(reciever_email.email, new_subject_line, body)
 
     def construct_email_msg_for_chatgpt(self, email_msg: Message) -> Tuple[str, str]:
         email_message = "From: %s\nTo: %s\nDate: %s\nSubject: %s\n\n" % (

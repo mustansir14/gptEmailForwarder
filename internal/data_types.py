@@ -10,6 +10,7 @@ from dataclasses_json import dataclass_json
 class ReceiverEmail:
     name: str
     email: str
+    header: str
 
 
 @dataclass_json

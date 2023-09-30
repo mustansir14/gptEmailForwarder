@@ -9,10 +9,10 @@ def is_prompt_long(prompt: str) -> bool:
     return len(prompt.split(" ")) > 1500
 
 
-def get_email_by_name(topic_emails: List[ReceiverEmail], name: str) -> str:
+def get_reciever_email_by_name(topic_emails: List[ReceiverEmail], name: str) -> ReceiverEmail:
     for topic_email in topic_emails:
         if topic_email.name == name:
-            return topic_email.email
+            return topic_email
 
 
 def get_project_sheet_url(
@@ -77,7 +77,7 @@ def remove_middle_words(text):
     if end > n:
         end = n
     # Remove the middle portion of words
-    del words[start : end + 1]
+    del words[start: end + 1]
     # Reconstruct the text with remaining words
     result_text = " ".join(words)
     return result_text
