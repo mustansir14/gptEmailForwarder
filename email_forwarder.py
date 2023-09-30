@@ -29,7 +29,8 @@ class EmailForwarder:
         self.load_config()
 
         for email_msg in self.get_new_emails():
-            email_msg_text, body = self.construct_email_msg_for_chatgpt(email_msg)
+            email_msg_text, body = self.construct_email_msg_for_chatgpt(
+                email_msg)
             email_details = self.process_email(email_msg_text)
             reciever_email, topic = self.chatgpt.get_email_and_topic_to_forward_to(
                 email_msg_text,
@@ -45,7 +46,8 @@ class EmailForwarder:
     def add_to_sheet(
         self, email_message_text: str, email_details: EmailDetails
     ) -> None:
-        logging.info("Finding project based on name, plot and/or linked contacts")
+        logging.info(
+            "Finding project based on name, plot and/or linked contacts")
         sheet_url, project = self.chatgpt.get_sheet_url_and_project_to_add_to(
             email_message_text,
             email_details,
@@ -130,7 +132,8 @@ class EmailForwarder:
         An iterator to login to IMAP, yield new emails and logout
         """
         logging.info("Connecting to IMAP")
-        mail = imaplib.IMAP4_SSL(self.config.imap_host, int(self.config.imap_port))
+        mail = imaplib.IMAP4_SSL(
+            self.config.imap_host, int(self.config.imap_port))
         rc, resp = mail.login(self.config.email, self.config.password)
         mail.select("Inbox")
         logging.info("Checking for messages")

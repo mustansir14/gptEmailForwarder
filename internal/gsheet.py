@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from typing import List
 
 import gspread
 
@@ -30,7 +31,16 @@ class GoogleSheet:
             project_item.quantity,
             project_item.rate,
         ]
-        self.sheet.insert_row(new_row, new_index)
+        if not self.check_if_row_exists(new_row):
+            self.sheet.insert_row(new_row, new_index)
+
+    def check_if_row_exists(self, row_to_check: List[str]) -> bool:
+        row_to_check = [str(x) for x in row_to_check]
+        rows = self.sheet.get_all_values()
+        for row in rows:
+            if row[1:len(row_to_check)] == row_to_check[1:]:
+                return True
+        return False
 
 
 if __name__ == "__main__":
@@ -46,3 +56,5 @@ if __name__ == "__main__":
             rate=10.5,
         )
     )
+    print(gsheet.check_if_row_exists(
+        [14, "09/29/2023", 100, "Test item", 2, 10.50]))
