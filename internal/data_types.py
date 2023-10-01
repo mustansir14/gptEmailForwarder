@@ -24,10 +24,10 @@ class PlotRange:
 @dataclass
 class Project:
     name: str
-    phase: int
-    plot_range: PlotRange
-    linked_contacts: str
-    google_sheet_url: str
+    phase: int | None
+    plot_range: PlotRange | None
+    linked_contacts: str | None
+    google_sheet_url: str | None
 
 
 @dataclass_json
@@ -50,6 +50,7 @@ class Configuration:
 
 @dataclass
 class ProjectItemGSheet:
+    item_ref: int = field(init=False)
     date_added: date
     plot_no: int
     item_description: str
@@ -70,8 +71,8 @@ class EmailDetails:
     company: str
     topic: str
     project_name: str
-    project_plot: int
-    project_location: str
+    project_plot: int | None
+    project_location: str | None
     item_description: str
     quantity: int
     rate: float

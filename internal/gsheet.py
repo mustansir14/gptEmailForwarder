@@ -19,12 +19,12 @@ class GoogleSheet:
     def insert_project_item(self, project_item: ProjectItemGSheet) -> None:
         first_col_values = self.sheet.col_values(1)
         try:
-            new_ref = int(first_col_values[-1]) + 1
+            project_item.item_ref = int(first_col_values[-1]) + 1
         except (ValueError, IndexError):
-            new_ref = 1
+            project_item.item_ref = 1
         new_index = len(first_col_values) + 1
         new_row = [
-            new_ref,
+            project_item.item_ref,
             project_item.date_added.strftime("%d/%m/%Y"),
             project_item.plot_no,
             project_item.item_description,

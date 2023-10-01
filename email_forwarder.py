@@ -14,6 +14,7 @@ from internal.data_types import Configuration, ProjectItemGSheet
 from internal.db import get_config_from_db
 from internal.gsheet import GoogleSheet
 from internal.utils import *
+from internal.gdrive import GoogleDrive
 
 logging.basicConfig(
     format="%(asctime)s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO
@@ -21,6 +22,7 @@ logging.basicConfig(
 
 
 class EmailForwarder:
+
     def run_process(self) -> None:
         """
         Runs a single iteration to check for new emails and forward
@@ -38,37 +40,44 @@ class EmailForwarder:
                 self.config.prompt_forward_email,
             )
             if topic in ["order", "variation"]:
-                self.add_to_sheet(email_msg_text, email_details)
+                project, project_item = self.add_to_sheet(
+                    email_msg_text, email_details)
+                self.add_to_drive(email_msg, project_item, project)
             self.forward_email(
                 reciever_email, email_details, email_msg
             )
 
+    def add_to_drive(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> None:
+        logging.info("Saving email and it's attachements to google drive")
+        gdrive = GoogleDrive()
+        gdrive.add_email(email_message, project_item, project)
+
     def add_to_sheet(
         self, email_message_text: str, email_details: EmailDetails
-    ) -> None:
+    ) -> Tuple[Project, ProjectItemGSheet]:
         logging.info(
             "Finding project based on name, plot and/or linked contacts")
-        sheet_url, project = self.chatgpt.get_sheet_url_and_project_to_add_to(
+        project = self.chatgpt.get_project_to_add_to(
             email_message_text,
             email_details,
             self.config.projects,
             self.config.prompt_project,
         )
-        if sheet_url is None:
-            sheet_url = self.config.misc_sheet_url
-            project = "Misc"
-        if not sheet_url:
+        if project is None:
+            project = Project(name="Misc", phase=None, plot_range=None,
+                              linked_contacts=None, google_sheet_url=self.config.misc_sheet_url)
+        if not project.google_sheet_url:
             logging.error(
                 "No matching project and misc sheet url not set. Can't add project item to gsheet."
             )
             return
-        logging.info(f"Project matched: {project}")
-        email_details.project_name = project
+        logging.info(f"Project matched: {project.name}")
+        email_details.project_name = project.name
         try:
-            gsheet = GoogleSheet(sheet_url)
+            gsheet = GoogleSheet(project.google_sheet_url)
         except PermissionError:
             logging.error(
-                f"Permission error accessing Gsheet for project {project}. Can't add project item"
+                f"Permission error accessing Gsheet for project {project.name}. Can't add project item"
             )
             return
         project_item = ProjectItemGSheet(
@@ -80,8 +89,9 @@ class EmailForwarder:
         )
         gsheet.insert_project_item(project_item)
         logging.info(
-            f"Added project item with description {project_item.item_description} to gsheet for project {project}"
+            f"Added project item with description {project_item.item_description} to gsheet for project {project.name}"
         )
+        return project, project_item
 
     def process_email(self, email_msg_text: str) -> EmailDetails:
         """

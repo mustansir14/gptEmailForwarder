@@ -3,7 +3,7 @@ from typing import List, Tuple
 import openai
 
 from internal.data_types import EmailDetails, Project, ReceiverEmail
-from internal.utils import (get_reciever_email_by_name, get_project_sheet_url,
+from internal.utils import (get_reciever_email_by_name, get_project_based_on_details,
                             is_prompt_long, remove_middle_words)
 
 
@@ -51,13 +51,13 @@ class ChatGPT:
                 topic = self.request(prompt)
                 return get_reciever_email_by_name(topic_emails, topic), topic
 
-    def get_sheet_url_and_project_to_add_to(
+    def get_project_to_add_to(
         self,
         email_message_text: str,
         email_details: EmailDetails,
         projects: List[Project],
         prompt: str,
-    ) -> Tuple[str | None, str | None]:
+    ) -> Project | None:
         """
         Request chatgpt to get matching project and its corresponding sheet url for the given email message. Will return None if no matching project
         """
@@ -71,6 +71,6 @@ class ChatGPT:
                 email_message = remove_middle_words(email_message)
             else:
                 project = self.request(prompt)
-                return get_project_sheet_url(
+                return get_project_based_on_details(
                     projects, project, email_details.project_plot, email_message_text
                 )

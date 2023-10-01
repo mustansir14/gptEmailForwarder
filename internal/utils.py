@@ -17,16 +17,16 @@ def get_reciever_email_by_name(topic_emails: List[ReceiverEmail], name: str) -> 
             return topic_email
 
 
-def get_project_sheet_url(
+def get_project_based_on_details(
     projects: List[Project], name: str, plot: int, email_msg: str
-) -> Tuple[str | None, str | None]:
+) -> Project | None:
     """
-    Returns project sheet url and name based on email details. First match is done by project name and plot, if none matched, then match by contacts and plot
+    Returns project on email details. First match is done by project name and plot, if none matched, then match by contacts and plot
     """
     # search by name and plot
     for project in projects:
         if project.name == name and check_if_plot_matches(plot, project.plot_range):
-            return project.google_sheet_url, project.name
+            return project
 
     # search by contacts and plot
     for project in projects:
@@ -42,9 +42,9 @@ def get_project_sheet_url(
                     break
 
         if contacts_found == 2 and check_if_plot_matches(plot, project.plot_range):
-            return project.google_sheet_url, project.name
+            return project
 
-    return None, None
+    return None
 
 
 def check_if_plot_matches(plot: int, plot_range: PlotRange) -> bool:
@@ -88,7 +88,7 @@ def remove_middle_words(text):
 def get_body_from_email_msg(email_msg: Message) -> str:
     body = ""
     for part in email_msg.walk():
-        if part.get_content_type() == "text/plain" or part.get_content_type() == "text/html":
+        if part.get_content_type() == "text/plain":
             body += part.get_content() + "\n"
     return body
 
