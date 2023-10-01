@@ -20,8 +20,6 @@ class GoogleDrive:
         self.service: Resource = build('drive', 'v3', credentials=credentials)
 
     def add_email(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> None:
-        # Extract email subject to use as the subfolder name
-        email_subject = email_message['Subject']
         # Create a subfolder with the email subject as its title
         subfolder_metadata = {
             'name': f"{project.name} - {project.phase} - {project_item.item_ref} - {project_item.date_added}",
@@ -74,7 +72,7 @@ class GoogleDrive:
                     'name': filename,
                     'parents': [subfolder['id']]
                 }
-                attachment_file = self.service.files().create(
+                self.service.files().create(
                     media_body=media,
                     body=attachment_metadata,
                     fields='id'
