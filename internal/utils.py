@@ -1,5 +1,7 @@
 import logging
-from email.message import Message
+from email.message import Message, EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from typing import List, Tuple
 
 from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail
@@ -86,6 +88,13 @@ def remove_middle_words(text):
 def get_body_from_email_msg(email_msg: Message) -> str:
     body = ""
     for part in email_msg.walk():
-        if part.get_content_type() == "text/plain":
+        if part.get_content_type() == "text/plain" or part.get_content_type() == "text/html":
             body += part.get_content() + "\n"
     return body
+
+
+def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMessage) -> EmailMessage:
+
+    html_part = MIMEText(html_to_append, 'html')
+    existing_email.attach(html_part)
+    return existing_email

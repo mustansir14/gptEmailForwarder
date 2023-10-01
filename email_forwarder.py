@@ -40,7 +40,7 @@ class EmailForwarder:
             if topic in ["order", "variation"]:
                 self.add_to_sheet(email_msg_text, email_details)
             self.forward_email(
-                reciever_email, email_details, email_msg["Subject"], body
+                reciever_email, email_details, email_msg
             )
 
     def add_to_sheet(
@@ -92,7 +92,7 @@ class EmailForwarder:
         )
 
     def forward_email(
-        self, reciever_email: ReceiverEmail, email_details: EmailDetails, subject: str, body: str
+        self, reciever_email: ReceiverEmail, email_details: EmailDetails, email_message: EmailMessage
     ) -> None:
         """
         Forwards the email to the given reciever. Modifies subject based on email details.
@@ -101,10 +101,18 @@ class EmailForwarder:
         subject_line = create_subject_line(email_details)
         logging.info(f"Got subject line from chatgpt {subject_line}")
 
-        new_subject_line = subject_line + " " + subject
+        new_subject = subject_line + \
+            " " + email_message["Subject"]
+        del email_message["Subject"]
+        email_message["Subject"] = new_subject
+        del email_message["To"]
+        del email_message["From"]
+        email_message["To"] = reciever_email.email
+        email_message["From"] = self.config.email
         if reciever_email.header:
-            body = reciever_email.header + "\n\n--\n\n" + body
-        self.send_email(reciever_email.email, new_subject_line, body)
+            email_message = append_html_at_start_of_email(
+                reciever_email.header, email_message)
+        self.send_email(email_message)
 
     def construct_email_msg_for_chatgpt(self, email_msg: Message) -> Tuple[str, str]:
         email_message = "From: %s\nTo: %s\nDate: %s\nSubject: %s\n\n" % (
@@ -159,22 +167,18 @@ class EmailForwarder:
             self.run_process()
             time.sleep(5)
 
-    def send_email(self, reciever_email: str, subject: str, body: str) -> None:
+    def send_email(self, email_message: EmailMessage) -> None:
         """
         Send email to given reciever
         """
-        em = EmailMessage()
-        em.set_content(body)
-        em["To"] = reciever_email
-        em["From"] = self.config.email
-        em["Subject"] = subject
+
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(
             self.config.smtp_server, int(self.config.smtp_port), context=context
         ) as server:
-            logging.info(f"Forwarding email to {reciever_email}")
+            logging.info(f"Forwarding email to {email_message['To']}")
             server.login(self.config.email, self.config.password)
-            server.send_message(em)
+            server.send_message(email_message)
 
 
 if __name__ == "__main__":
