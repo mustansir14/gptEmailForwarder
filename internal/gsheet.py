@@ -25,11 +25,12 @@ class GoogleSheet:
         new_index = len(first_col_values) + 1
         new_row = [
             new_ref,
-            project_item.date_added.strftime("%m/%d/%Y"),
+            project_item.date_added.strftime("%d/%m/%Y"),
             project_item.plot_no,
             project_item.item_description,
             project_item.quantity,
             project_item.rate,
+            project_item.total
         ]
         if not self.check_if_row_exists(new_row):
             self.sheet.insert_row(new_row, new_index)
