@@ -4,7 +4,7 @@ from typing import List
 
 import gspread
 
-from internal.data_types import ProjectItemGSheet
+from internal.data_types import ProjectItemGSheet, Project
 from internal.env import Env
 
 
@@ -34,6 +34,11 @@ class GoogleSheet:
         ]
         if not self.check_if_row_exists(new_row):
             self.sheet.insert_row(new_row, new_index)
+
+    def insert_gdrive_link(self, gdrive_link: str, project_item: ProjectItemGSheet) -> None:
+        first_col_values = self.sheet.col_values(1)
+        row_index = first_col_values.index(str(project_item.item_ref))
+        self.sheet.update_cell(row_index+1, 8, gdrive_link)
 
     def check_if_row_exists(self, row_to_check: List[str]) -> bool:
         row_to_check = [str(x) for x in row_to_check]

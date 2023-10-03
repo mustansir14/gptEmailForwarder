@@ -42,15 +42,17 @@ class EmailForwarder:
             if topic in ["order", "variation"]:
                 project, project_item = self.add_to_sheet(
                     email_msg_text, email_details)
-                self.add_to_drive(email_msg, project_item, project)
+                gdrive_url = self.add_to_drive(
+                    email_msg, project_item, project)
+                self.add_gdrive_url_to_sheet(gdrive_url, project, project_item)
             self.forward_email(
                 reciever_email, email_details, email_msg
             )
 
-    def add_to_drive(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> None:
+    def add_to_drive(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> str:
         logging.info("Saving email and it's attachements to google drive")
         gdrive = GoogleDrive()
-        gdrive.add_email(email_message, project_item, project)
+        return gdrive.add_email(email_message, project_item, project)
 
     def add_to_sheet(
         self, email_message_text: str, email_details: EmailDetails
@@ -92,6 +94,20 @@ class EmailForwarder:
             f"Added project item with description {project_item.item_description} to gsheet for project {project.name}"
         )
         return project, project_item
+
+    def add_gdrive_url_to_sheet(self, gdrive_url: str, project: Project, project_item: ProjectItemGSheet) -> None:
+        try:
+            gsheet = GoogleSheet(project.google_sheet_url)
+        except PermissionError:
+            logging.error(
+                f"Permission error accessing Gsheet for project {project.name}. Can't insert gdrive url"
+            )
+            return
+        try:
+            gsheet.insert_gdrive_link(gdrive_url, project_item)
+        except ValueError:
+            logging.error(
+                f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist")
 
     def process_email(self, email_msg_text: str) -> EmailDetails:
         """

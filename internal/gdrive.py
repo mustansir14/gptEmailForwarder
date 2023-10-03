@@ -19,7 +19,7 @@ class GoogleDrive:
             json.loads(Env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON))
         self.service: Resource = build('drive', 'v3', credentials=credentials)
 
-    def add_email(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> None:
+    def add_email(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> str:
         # Create a subfolder with the email subject as its title
         subfolder_metadata = {
             'name': f"{project.name} - {project.phase} - {project_item.item_ref} - {project_item.date_added}",
@@ -28,7 +28,7 @@ class GoogleDrive:
         }
         subfolder = self.service.files().create(
             body=subfolder_metadata,
-            fields='id'
+            fields='id,webViewLink'
         ).execute()
 
         # Create a MediaIoBaseUpload object for the email HTML content
@@ -77,3 +77,5 @@ class GoogleDrive:
                     body=attachment_metadata,
                     fields='id'
                 ).execute()
+
+        return subfolder["webViewLink"]
