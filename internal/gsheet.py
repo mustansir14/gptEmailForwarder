@@ -40,6 +40,7 @@ class GoogleSheet:
         row_index = first_col_values.index(str(project_item.item_ref))
         new_value = f"{project_item.item_description}\n\nLINK TO ATTACHMENTS:\n{gdrive_link}"
         self.sheet.update_cell(row_index+1, 4, new_value)
+        self.sheet.update_cell(row_index+1, 8, gdrive_link)
 
     def check_if_row_exists(self, row_to_check: List[str]) -> bool:
         row_to_check = [str(x) for x in row_to_check]
