@@ -8,6 +8,7 @@ from internal.data_types import ProjectItemGSheet, Project
 from email.message import EmailMessage
 from internal.utils import get_body_from_email_msg
 import mimetypes
+from typing import List
 
 MAIN_FOLDER_ID = "1lK9BOZSbmp0D5uPjHlNPD-DBlQ9fsp7v"
 
@@ -19,7 +20,7 @@ class GoogleDrive:
             json.loads(Env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON))
         self.service: Resource = build('drive', 'v3', credentials=credentials)
 
-    def add_email(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> str:
+    def add_email(self, email_message: EmailMessage, project_items: List[ProjectItemGSheet], project: Project) -> str:
 
         # Create a subfolder with the email subject as its title
         subfolder = self.get_folder(project.name)
@@ -28,7 +29,7 @@ class GoogleDrive:
 
         # create item folder
         item_folder = self.create_folder(
-            f"Item {project_item.item_ref}", subfolder["id"])
+            f"Item {'+'.join([str(item.item_ref) for item in project_items])}", subfolder["id"])
 
         # Create a MediaIoBaseUpload object for the email HTML content
         # Create a simplified HTML content

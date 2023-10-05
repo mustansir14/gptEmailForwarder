@@ -67,12 +67,18 @@ class ProjectItemGSheet:
 
 @dataclass_json
 @dataclass
+class EmailItem:
+    item_description: str
+    quantity: int
+    rate: float
+
+
+@dataclass_json
+@dataclass
 class EmailDetails:
     company: str
     topic: str
     project_name: str
     project_plot: int | None
     project_location: str | None
-    item_description: str
-    quantity: int
-    rate: float
+    items: List[EmailItem]

@@ -40,23 +40,24 @@ class EmailForwarder:
                 self.config.prompt_forward_email,
             )
             if topic in ["order", "variation"]:
-                project, project_item = self.add_to_sheet(
+                project, project_items = self.add_to_sheet(
                     email_msg_text, email_details)
                 gdrive_url = self.add_to_drive(
-                    email_msg, project_item, project)
-                self.add_gdrive_url_to_sheet(gdrive_url, project, project_item)
+                    email_msg, project_items, project)
+                self.add_gdrive_url_to_sheet(
+                    gdrive_url, project, project_items)
             self.forward_email(
                 reciever_email, email_details, email_msg
             )
 
-    def add_to_drive(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> str:
+    def add_to_drive(self, email_message: EmailMessage, project_items: List[ProjectItemGSheet], project: Project) -> str:
         logging.info("Saving email and it's attachements to google drive")
         gdrive = GoogleDrive()
-        return gdrive.add_email(email_message, project_item, project)
+        return gdrive.add_email(email_message, project_items, project)
 
     def add_to_sheet(
         self, email_message_text: str, email_details: EmailDetails
-    ) -> Tuple[Project, ProjectItemGSheet]:
+    ) -> Tuple[Project, List[ProjectItemGSheet]]:
         logging.info(
             "Finding project based on name, plot and/or linked contacts")
         project = self.chatgpt.get_project_to_add_to(
@@ -82,20 +83,23 @@ class EmailForwarder:
                 f"Permission error accessing Gsheet for project {project.name}. Can't add project item"
             )
             return
-        project_item = ProjectItemGSheet(
-            date_added=date.today(),
-            plot_no=email_details.project_plot,
-            item_description=email_details.item_description,
-            quantity=email_details.quantity,
-            rate=email_details.rate,
-        )
-        gsheet.insert_project_item(project_item)
-        logging.info(
-            f"Added project item with description {project_item.item_description} to gsheet for project {project.name}"
-        )
-        return project, project_item
+        project_items = []
+        for item in email_details.items:
+            project_item = ProjectItemGSheet(
+                date_added=date.today(),
+                plot_no=email_details.project_plot,
+                item_description=item.item_description,
+                quantity=item.quantity,
+                rate=item.rate,
+            )
+            gsheet.insert_project_item(project_item)
+            logging.info(
+                f"Added project item with description {project_item.item_description} to gsheet for project {project.name}"
+            )
+            project_items.append(project_item)
+        return project, project_items
 
-    def add_gdrive_url_to_sheet(self, gdrive_url: str, project: Project, project_item: ProjectItemGSheet) -> None:
+    def add_gdrive_url_to_sheet(self, gdrive_url: str, project: Project, project_items: List[ProjectItemGSheet]) -> None:
         try:
             gsheet = GoogleSheet(project.google_sheet_url)
         except PermissionError:
@@ -103,11 +107,12 @@ class EmailForwarder:
                 f"Permission error accessing Gsheet for project {project.name}. Can't insert gdrive url"
             )
             return
-        try:
-            gsheet.insert_gdrive_link(gdrive_url, project_item)
-        except ValueError:
-            logging.error(
-                f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist")
+        for project_item in project_items:
+            try:
+                gsheet.insert_gdrive_link(gdrive_url, project_item)
+            except ValueError:
+                logging.error(
+                    f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist")
 
     def process_email(self, email_msg_text: str) -> EmailDetails:
         """
