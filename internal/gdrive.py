@@ -20,16 +20,15 @@ class GoogleDrive:
         self.service: Resource = build('drive', 'v3', credentials=credentials)
 
     def add_email(self, email_message: EmailMessage, project_item: ProjectItemGSheet, project: Project) -> str:
+
         # Create a subfolder with the email subject as its title
-        subfolder_metadata = {
-            'name': f"{project.name} - {project.phase} - {project_item.item_ref} - {project_item.date_added}",
-            'mimeType': 'application/vnd.google-apps.folder',
-            'parents': [MAIN_FOLDER_ID]
-        }
-        subfolder = self.service.files().create(
-            body=subfolder_metadata,
-            fields='id,webViewLink'
-        ).execute()
+        subfolder = self.get_folder(project.name)
+        if subfolder is None:
+            subfolder = self.create_folder(project.name, MAIN_FOLDER_ID)
+
+        # create item folder
+        item_folder = self.create_folder(
+            f"Item {project_item.item_ref}", subfolder["id"])
 
         # Create a MediaIoBaseUpload object for the email HTML content
         # Create a simplified HTML content
@@ -50,7 +49,7 @@ class GoogleDrive:
         # Upload the email HTML content to the subfolder
         email_html_metadata = {
             'name': 'email.html',
-            'parents': [subfolder['id']]
+            'parents': [item_folder['id']]
         }
         self.service.files().create(
             media_body=email_html_media,
@@ -70,7 +69,7 @@ class GoogleDrive:
                     attachment_data), mimetype=mime_type, resumable=True)
                 attachment_metadata = {
                     'name': filename,
-                    'parents': [subfolder['id']]
+                    'parents': [item_folder['id']]
                 }
                 self.service.files().create(
                     media_body=media,
@@ -79,3 +78,23 @@ class GoogleDrive:
                 ).execute()
 
         return subfolder["webViewLink"]
+
+    def get_folder(self, folder_name: str) -> dict:
+        results = self.service.files().list(
+            q=f"name='{folder_name}' and '{MAIN_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'",
+            fields="files(id, name)").execute()
+        folders = results.get('files', [])
+        if folders:
+            return folders[0]
+        return None
+
+    def create_folder(self, folder_name: str, parent: str) -> dict:
+        subfolder_metadata = {
+            'name': f"{folder_name}",
+            'mimeType': 'application/vnd.google-apps.folder',
+            'parents': [parent]
+        }
+        return self.service.files().create(
+            body=subfolder_metadata,
+            fields='id,webViewLink'
+        ).execute()
