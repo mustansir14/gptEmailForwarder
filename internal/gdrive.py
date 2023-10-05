@@ -77,7 +77,7 @@ class GoogleDrive:
                     fields='id'
                 ).execute()
 
-        return subfolder["webViewLink"]
+        return item_folder["webViewLink"]
 
     def get_folder(self, folder_name: str) -> dict:
         results = self.service.files().list(

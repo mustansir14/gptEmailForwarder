@@ -38,7 +38,8 @@ class GoogleSheet:
     def insert_gdrive_link(self, gdrive_link: str, project_item: ProjectItemGSheet) -> None:
         first_col_values = self.sheet.col_values(1)
         row_index = first_col_values.index(str(project_item.item_ref))
-        self.sheet.update_cell(row_index+1, 8, gdrive_link)
+        new_value = f"{project_item.item_description}\n\nLINK TO ATTACHMENTS:\n{gdrive_link}"
+        self.sheet.update_cell(row_index+1, 4, new_value)
 
     def check_if_row_exists(self, row_to_check: List[str]) -> bool:
         row_to_check = [str(x) for x in row_to_check]
