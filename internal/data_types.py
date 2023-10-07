@@ -69,8 +69,8 @@ class ProjectItemGSheet:
 @dataclass
 class EmailItem:
     item_description: str
-    quantity: int
-    rate: float
+    quantity: int | None
+    rate: float | None
 
 
 @dataclass_json

@@ -118,6 +118,7 @@ class EmailForwarder:
         """
         Processes and extracts details from email using chatgpt
         """
+        logging.info("Getting email details from chatgpt")
         return self.chatgpt.get_email_details(
             email_msg_text, self.config.prompt_subject_line
         )
@@ -198,7 +199,7 @@ class EmailForwarder:
             self.run_process()
             time.sleep(5)
 
-    def send_email(self, email_message: EmailMessage) -> None:
+    def send_email(self, email_message: Message) -> None:
         """
         Send email to given reciever
         """

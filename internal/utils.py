@@ -2,7 +2,9 @@ import logging
 from email.message import Message, EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import List, Tuple
+from email.mime.message import MIMEMessage
+from typing import List
+from bs4 import BeautifulSoup
 
 from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail
 
@@ -93,8 +95,21 @@ def get_body_from_email_msg(email_msg: Message) -> str:
     return body
 
 
-def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMessage) -> EmailMessage:
+def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMessage) -> MIMEMultipart:
 
-    html_part = MIMEText(html_to_append, 'html')
-    existing_email.attach(html_part)
-    return existing_email
+    is_html = bool(
+        BeautifulSoup(html_to_append, "html.parser").find())
+    if not is_html:
+        html_to_append = f"<p>{html_to_append}</p>"
+
+    part1 = MIMEText(html_to_append, "html")
+    part2 = MIMEMessage(existing_email)
+
+    new_email = MIMEMultipart()
+    new_email['Subject'] = existing_email["Subject"]
+    new_email['From'] = existing_email["From"]
+    new_email['To'] = existing_email["To"]
+    new_email.attach(part1)
+    new_email.attach(part2)
+
+    return new_email
