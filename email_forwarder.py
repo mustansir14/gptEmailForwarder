@@ -173,12 +173,10 @@ class EmailForwarder:
         """
         An iterator to login to IMAP, yield new emails and logout
         """
-        logging.info("Connecting to IMAP")
         mail = imaplib.IMAP4_SSL(
             self.config.imap_host, int(self.config.imap_port))
         rc, resp = mail.login(self.config.email, self.config.password)
         mail.select("Inbox")
-        logging.info("Checking for messages")
         status, data = mail.search(None, "(UNSEEN)")
 
         for num in data[0].split():
@@ -187,7 +185,6 @@ class EmailForwarder:
             email_msg = data[0][1]
             yield email.message_from_bytes(email_msg, policy=policy.SMTP)
 
-        logging.info("Logging out")
         mail.logout()
 
     def run_loop(self) -> None:
@@ -195,6 +192,8 @@ class EmailForwarder:
         Runs the Email Forwarding process in a loop
         """
 
+        logging.info(f"Logged in as {self.config.email}")
+        logging.info("Listening for new emails...")
         while True:
             self.run_process()
             time.sleep(5)
