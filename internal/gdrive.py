@@ -68,6 +68,8 @@ class GoogleDrive:
                 attachment_data = part.get_payload(decode=True)
                 media = MediaIoBaseUpload(io.BytesIO(
                     attachment_data), mimetype=mime_type, resumable=True)
+                if media is None:
+                    continue
                 attachment_metadata = {
                     'name': filename,
                     'parents': [item_folder['id']]
