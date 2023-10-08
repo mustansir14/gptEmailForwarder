@@ -87,7 +87,7 @@ class EmailForwarder:
         for item in email_details.items:
             project_item = ProjectItemGSheet(
                 date_added=date.today(),
-                plot_no=email_details.project_plot,
+                plot_no=item.plot_no,
                 item_description=item.item_description,
                 quantity=item.quantity,
                 rate=item.rate,

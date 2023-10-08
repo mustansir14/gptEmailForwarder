@@ -59,7 +59,10 @@ def check_if_plot_matches(plot: int, plot_range: PlotRange) -> bool:
 
 
 def create_subject_line(email_details: EmailDetails) -> str:
-    return f"***{email_details.topic}*** - {email_details.company} - {email_details.project_name} - {email_details.project_plot} - {email_details.project_location} - "
+    plots = "+".join([str(item.plot_no) for item in email_details.items])
+    if plots == "":
+        plots = None
+    return f"***{email_details.topic}*** - {email_details.company} - {email_details.project_name} - {plots} - {email_details.project_location} - "
 
 
 def remove_middle_words(text):

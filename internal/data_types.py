@@ -69,6 +69,7 @@ class ProjectItemGSheet:
 @dataclass
 class EmailItem:
     item_description: str
+    plot_no: int | None
     quantity: int | None
     rate: float | None
 
@@ -79,6 +80,5 @@ class EmailDetails:
     company: str
     topic: str
     project_name: str | None
-    project_plot: int | None
     project_location: str | None
     items: List[EmailItem]

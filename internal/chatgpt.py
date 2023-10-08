@@ -71,6 +71,9 @@ class ChatGPT:
                 email_message = remove_middle_words(email_message)
             else:
                 project = self.request(prompt)
+                plot = None
+                if email_details.items:
+                    plot = email_details.items[0].plot_no
                 return get_project_based_on_details(
-                    projects, project, email_details.project_plot, email_message_text
+                    projects, project, plot, email_message_text
                 )
