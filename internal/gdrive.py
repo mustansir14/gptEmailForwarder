@@ -74,11 +74,14 @@ class GoogleDrive:
                     'name': filename,
                     'parents': [item_folder['id']]
                 }
-                self.service.files().create(
-                    media_body=media,
-                    body=attachment_metadata,
-                    fields='id'
-                ).execute()
+                try:
+                    self.service.files().create(
+                        media_body=media,
+                        body=attachment_metadata,
+                        fields='id'
+                    ).execute()
+                except:
+                    continue
 
         return item_folder["webViewLink"]
 
