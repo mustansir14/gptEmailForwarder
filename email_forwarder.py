@@ -192,6 +192,7 @@ class EmailForwarder:
         Runs the Email Forwarding process in a loop
         """
 
+        self.load_config()
         logging.info(f"Logged in as {self.config.email}")
         logging.info("Listening for new emails...")
         while True:
