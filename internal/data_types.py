@@ -78,7 +78,7 @@ class EmailItem:
 class EmailDetails:
     company: str
     topic: str
-    project_name: str
+    project_name: str | None
     project_plot: int | None
     project_location: str | None
     items: List[EmailItem]
