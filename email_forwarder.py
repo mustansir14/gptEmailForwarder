@@ -68,21 +68,19 @@ class EmailForwarder:
         )
         if project is None:
             project = Project(name="Misc", phase=None, plot_range=None,
-                              linked_contacts=None, google_sheet_url=self.config.misc_sheet_url)
-        if not project.google_sheet_url:
+                              linked_contacts=None, google_sheet_url_windows=self.config.misc_sheet_url)
+        if not project.google_sheet_url_windows and not project.google_sheet_url_carpentry:
             logging.error(
                 "No matching project and misc sheet url not set. Can't add project item to gsheet."
             )
             return
         logging.info(f"Project matched: {project.name}")
         email_details.project_name = project.name
-        try:
-            gsheet = GoogleSheet(project.google_sheet_url)
-        except PermissionError:
-            logging.error(
-                f"Permission error accessing Gsheet for project {project.name}. Can't add project item"
-            )
-            return
+
+        available_gsheet, gsheet_windows, gsheet_carpentry = self.get_google_sheets_for_project(
+            project)
+        if available_gsheet == None:
+            return project, []
         project_items = []
         for item in email_details.items:
             project_item = ProjectItemGSheet(
@@ -90,9 +88,16 @@ class EmailForwarder:
                 plot_no=item.plot_no,
                 item_description=item.item_description,
                 quantity=item.quantity,
+                no_of_days_or_hours=item.no_of_days_or_hours,
                 rate=item.rate,
+                item_type=item.item_type
             )
-            gsheet.insert_project_item(project_item)
+            if item.item_type == "windows" and gsheet_windows:
+                gsheet_windows.insert_project_item(project_item)
+            elif item.item_type == "carpentry" and gsheet_carpentry:
+                gsheet_carpentry.insert_project_item(project_item)
+            else:
+                available_gsheet.insert_project_item(project_item)
             logging.info(
                 f"Added project item with description {project_item.item_description} to gsheet for project {project.name}"
             )
@@ -100,19 +105,44 @@ class EmailForwarder:
         return project, project_items
 
     def add_gdrive_url_to_sheet(self, gdrive_url: str, project: Project, project_items: List[ProjectItemGSheet]) -> None:
-        try:
-            gsheet = GoogleSheet(project.google_sheet_url)
-        except PermissionError:
-            logging.error(
-                f"Permission error accessing Gsheet for project {project.name}. Can't insert gdrive url"
-            )
-            return
+        available_gsheet, gsheet_windows, gsheet_carpentry = self.get_google_sheets_for_project(
+            project)
         for project_item in project_items:
             try:
-                gsheet.insert_gdrive_link(gdrive_url, project_item)
+                if project_item.item_type == "windows" and gsheet_windows:
+                    gsheet_windows.insert_gdrive_link(gdrive_url, project_item)
+                elif project_item.item_type == "carpentry" and gsheet_carpentry:
+                    gsheet_carpentry.insert_gdrive_link(
+                        gdrive_url, project_item)
+                else:
+                    available_gsheet.insert_gdrive_link(
+                        gdrive_url, project_item)
             except ValueError:
                 logging.error(
                     f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist")
+
+    def get_google_sheets_for_project(self, project: Project) -> Tuple[GoogleSheet, GoogleSheet, GoogleSheet]:
+        gsheet_windows = None
+        gsheet_carpentry = None
+        try:
+            if project.google_sheet_url_windows is not None and project.google_sheet_url_windows.strip() != "":
+                gsheet_windows = GoogleSheet(project.google_sheet_url_windows)
+            if project.google_sheet_url_carpentry is not None and project.google_sheet_url_carpentry.strip() != "":
+                gsheet_carpentry = GoogleSheet(
+                    project.google_sheet_url_carpentry)
+        except PermissionError:
+            logging.error(
+                f"Permission error accessing Gsheet for project {project.name}. Can't add project item"
+            )
+
+        if gsheet_windows is None and gsheet_carpentry is None:
+            logging.error("No Gsheet URL set, skipping writing to gsheet")
+            return None, None, None
+        if gsheet_windows is not None:
+            available_gsheet = gsheet_windows
+        else:
+            available_gsheet = gsheet_carpentry
+        return available_gsheet, gsheet_windows, gsheet_carpentry
 
     def process_email(self, email_msg_text: str) -> EmailDetails:
         """
@@ -120,7 +150,7 @@ class EmailForwarder:
         """
         logging.info("Getting email details from chatgpt")
         return self.chatgpt.get_email_details(
-            email_msg_text, self.config.prompt_subject_line
+            email_msg_text, self.config.prompt_subject_line, self.config.project_types
         )
 
     def forward_email(

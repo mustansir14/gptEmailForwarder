@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import openai
 
-from internal.data_types import EmailDetails, Project, ReceiverEmail
+from internal.data_types import EmailDetails, Project, ProjectType, ReceiverEmail
 from internal.utils import (get_reciever_email_by_name, get_project_based_on_details,
                             is_prompt_long, remove_middle_words)
 
@@ -23,12 +23,25 @@ class ChatGPT:
 
         return response.choices[0].message["content"]
 
-    def get_email_details(self, email_message: str, prompt: str) -> EmailDetails:
+    def get_email_details(self, email_message: str, prompt: str, project_types: List[ProjectType]) -> EmailDetails:
         """
         Request chatgpt to extract email details for the given email message
         """
+        project_type_dict = {}
+        for project_type in project_types:
+            project_type_dict[project_type.name] = {
+                "hourly_rate": project_type.hour_rate,
+                "day_rate": project_type.day_rate,
+                "keywords": project_type.keywords
+            }
         while True:
-            prompt = prompt.replace("{email_message}", email_message)
+            prompt = prompt.replace("{email_message}", email_message).replace(
+                "{windows_hourly_rate}", str(project_type_dict["Windows"]["hourly_rate"])).replace(
+                "{windows_day_rate}", str(project_type_dict["Windows"]["day_rate"])).replace(
+                "{carpentry_hourly_rate}", str(project_type_dict["Carpentry"]["hourly_rate"])).replace(
+                "{carpentry_day_rate}", str(project_type_dict["Carpentry"]["day_rate"])).replace(
+                "{windows_keywords}", project_type_dict["Windows"]["keywords"]).replace(
+                "{carpentry_keywords}", project_type_dict["Carpentry"]["keywords"])
             if is_prompt_long(prompt):
                 email_message = remove_middle_words(email_message)
             else:

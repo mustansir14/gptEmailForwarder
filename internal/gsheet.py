@@ -28,7 +28,7 @@ class GoogleSheet:
             project_item.date_added.strftime("%d/%m/%Y"),
             project_item.plot_no,
             project_item.item_description,
-            project_item.quantity,
+            project_item.get_combined_quantity(),
             project_item.rate,
             project_item.total
         ]

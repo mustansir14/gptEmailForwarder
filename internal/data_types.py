@@ -27,7 +27,17 @@ class Project:
     phase: int | None
     plot_range: PlotRange | None
     linked_contacts: str | None
-    google_sheet_url: str | None
+    google_sheet_url_windows: str | None
+    google_sheet_url_carpentry: str | None
+
+
+@dataclass_json
+@dataclass
+class ProjectType:
+    name: str
+    day_rate: float
+    hour_rate: float
+    keywords: str
 
 
 @dataclass_json
@@ -46,6 +56,7 @@ class Configuration:
     receiver_emails: List[ReceiverEmail]
     projects: List[Project]
     misc_sheet_url: str
+    project_types: List[ProjectType]
 
 
 @dataclass
@@ -56,13 +67,29 @@ class ProjectItemGSheet:
     item_description: str
     quantity: int
     rate: float
+    no_of_days_or_hours: int
     total: float = field(init=False)
+    item_type: str | None
 
     def __post_init__(self):
-        if type(self.rate) == float and type(self.quantity) == int:
+        self.total = None
+        if self.rate is None:
+            return
+        if self.quantity is not None:
             self.total = self.rate * self.quantity
-        else:
-            self.total = None
+        if self.no_of_days_or_hours is not None:
+            if self.total is None:
+                self.total = self.rate
+            self.total = self.total * self.no_of_days_or_hours
+
+    def get_combined_quantity(self) -> str | None:
+        if self.quantity and self.no_of_days_or_hours:
+            return f"{self.quantity}x{self.no_of_days_or_hours}"
+        if self.quantity:
+            return str(self.quantity)
+        if self.no_of_days_or_hours:
+            return str(self.no_of_days_or_hours)
+        return None
 
 
 @dataclass_json
@@ -72,6 +99,8 @@ class EmailItem:
     plot_no: int | None
     quantity: int | None
     rate: float | None
+    item_type: str
+    no_of_days_or_hours: int | None
 
 
 @dataclass_json
