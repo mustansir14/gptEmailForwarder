@@ -3,10 +3,10 @@ from email.message import Message, EmailMessage
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.message import MIMEMessage
-from typing import List
+from typing import List, Dict
 from bs4 import BeautifulSoup
 
-from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail
+from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail, ProjectType
 
 
 def is_prompt_long(prompt: str) -> bool:
@@ -116,3 +116,18 @@ def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMess
     new_email.attach(part2)
 
     return new_email
+
+
+def comma_seperated_to_list(text: str) -> List[str]:
+    return [x.strip() for x in text.split(",") if x.strip()]
+
+
+def create_project_type_dict(project_types: List[ProjectType]) -> Dict[str, Dict[str, str | float]]:
+    project_type_dict = {}
+    for project_type in project_types:
+        project_type_dict[project_type.name.lower()] = {
+            "hourly_rate": project_type.hour_rate,
+            "day_rate": project_type.day_rate,
+            "keywords": project_type.keywords
+        }
+    return project_type_dict

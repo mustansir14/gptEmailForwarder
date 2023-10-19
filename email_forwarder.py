@@ -49,6 +49,7 @@ class EmailForwarder:
             self.forward_email(
                 reciever_email, email_details, email_msg
             )
+            logging.info("Email processing done.")
 
     def add_to_drive(self, email_message: EmailMessage, project_items: List[ProjectItemGSheet], project: Project) -> str:
         logging.info("Saving email and it's attachements to google drive")
@@ -149,9 +150,18 @@ class EmailForwarder:
         Processes and extracts details from email using chatgpt
         """
         logging.info("Getting email details from chatgpt")
-        return self.chatgpt.get_email_details(
+        email_details = self.chatgpt.get_email_details(
             email_msg_text, self.config.prompt_subject_line, self.config.project_types
         )
+        project_type_dict = create_project_type_dict(self.config.project_types)
+        for item in email_details.items:
+            if item.item_type and item.unit_time:
+                if item.unit_time == "day":
+                    item.rate = project_type_dict[item.item_type]["day_rate"]
+                else:
+                    item.rate = project_type_dict[item.item_type]["hourly_rate"]
+
+        return email_details
 
     def forward_email(
         self, reciever_email: ReceiverEmail, email_details: EmailDetails, email_message: EmailMessage

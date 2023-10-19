@@ -101,6 +101,7 @@ class EmailItem:
     rate: float | None
     item_type: str
     no_of_days_or_hours: int | None
+    unit_time: str | None
 
 
 @dataclass_json
