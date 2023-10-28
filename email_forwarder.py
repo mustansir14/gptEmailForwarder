@@ -69,7 +69,7 @@ class EmailForwarder:
         )
         if project is None:
             project = Project(name="Misc", phase=None, plot_range=None,
-                              linked_contacts=None, google_sheet_url_windows=self.config.misc_sheet_url)
+                              linked_contacts=None, google_sheet_url_windows=self.config.misc_sheet_url, google_sheet_url_carpentry=None)
         if not project.google_sheet_url_windows and not project.google_sheet_url_carpentry:
             logging.error(
                 "No matching project and misc sheet url not set. Can't add project item to gsheet."
