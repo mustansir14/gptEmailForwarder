@@ -4,7 +4,7 @@ from typing import List
 
 import gspread
 
-from internal.data_types import ProjectItemGSheet, Project
+from internal.data_types import Project, ProjectItemGSheet
 from internal.env import Env
 
 
@@ -30,23 +30,27 @@ class GoogleSheet:
             project_item.item_description,
             project_item.get_combined_quantity(),
             project_item.rate,
-            project_item.total
+            project_item.total,
         ]
         if not self.check_if_row_exists(new_row):
             self.sheet.insert_row(new_row, new_index)
 
-    def insert_gdrive_link(self, gdrive_link: str, project_item: ProjectItemGSheet) -> None:
+    def insert_gdrive_link(
+        self, gdrive_link: str, project_item: ProjectItemGSheet
+    ) -> None:
         first_col_values = self.sheet.col_values(1)
         row_index = first_col_values.index(str(project_item.item_ref))
-        new_value = f"{project_item.item_description}\n\nLINK TO ATTACHMENTS:\n{gdrive_link}"
-        self.sheet.update_cell(row_index+1, 4, new_value)
-        self.sheet.update_cell(row_index+1, 8, gdrive_link)
+        new_value = (
+            f"{project_item.item_description}\n\nLINK TO ATTACHMENTS:\n{gdrive_link}"
+        )
+        self.sheet.update_cell(row_index + 1, 4, new_value)
+        self.sheet.update_cell(row_index + 1, 8, gdrive_link)
 
     def check_if_row_exists(self, row_to_check: List[str]) -> bool:
         row_to_check = [str(x) for x in row_to_check]
         rows = self.sheet.get_all_values()
         for row in rows:
-            if row[1:len(row_to_check)] == row_to_check[1:]:
+            if row[1 : len(row_to_check)] == row_to_check[1:]:
                 return True
         return False
 
@@ -64,5 +68,4 @@ if __name__ == "__main__":
             rate=10.5,
         )
     )
-    print(gsheet.check_if_row_exists(
-        [14, "09/29/2023", 100, "Test item", 2, 10.50]))
+    print(gsheet.check_if_row_exists([14, "09/29/2023", 100, "Test item", 2, 10.50]))

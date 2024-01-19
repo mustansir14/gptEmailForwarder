@@ -1,19 +1,23 @@
 import logging
-from email.message import Message, EmailMessage
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.message import EmailMessage, Message
 from email.mime.message import MIMEMessage
-from typing import List, Dict
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Dict, List
+
 from bs4 import BeautifulSoup
 
-from internal.data_types import EmailDetails, PlotRange, Project, ReceiverEmail, ProjectType
+from internal.data_types import (EmailDetails, PlotRange, Project, ProjectType,
+                                 ReceiverEmail)
 
 
 def is_prompt_long(prompt: str) -> bool:
     return len(prompt.split(" ")) > 1500
 
 
-def get_reciever_email_by_name(topic_emails: List[ReceiverEmail], name: str) -> ReceiverEmail:
+def get_reciever_email_by_name(
+    topic_emails: List[ReceiverEmail], name: str
+) -> ReceiverEmail:
     for topic_email in topic_emails:
         if topic_email.name == name:
             return topic_email
@@ -84,7 +88,7 @@ def remove_middle_words(text):
     if end > n:
         end = n
     # Remove the middle portion of words
-    del words[start: end + 1]
+    del words[start : end + 1]
     # Reconstruct the text with remaining words
     result_text = " ".join(words)
     return result_text
@@ -98,10 +102,10 @@ def get_body_from_email_msg(email_msg: Message) -> str:
     return body
 
 
-def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMessage) -> MIMEMultipart:
-
-    is_html = bool(
-        BeautifulSoup(html_to_append, "html.parser").find())
+def append_html_at_start_of_email(
+    html_to_append: str, existing_email: EmailMessage
+) -> MIMEMultipart:
+    is_html = bool(BeautifulSoup(html_to_append, "html.parser").find())
     if not is_html:
         html_to_append = f"<p>{html_to_append}</p>"
 
@@ -109,9 +113,9 @@ def append_html_at_start_of_email(html_to_append: str, existing_email: EmailMess
     part2 = MIMEMessage(existing_email)
 
     new_email = MIMEMultipart()
-    new_email['Subject'] = existing_email["Subject"]
-    new_email['From'] = existing_email["From"]
-    new_email['To'] = existing_email["To"]
+    new_email["Subject"] = existing_email["Subject"]
+    new_email["From"] = existing_email["From"]
+    new_email["To"] = existing_email["To"]
     new_email.attach(part1)
     new_email.attach(part2)
 
@@ -122,12 +126,14 @@ def comma_seperated_to_list(text: str) -> List[str]:
     return [x.strip() for x in text.split(",") if x.strip()]
 
 
-def create_project_type_dict(project_types: List[ProjectType]) -> Dict[str, Dict[str, str | float]]:
+def create_project_type_dict(
+    project_types: List[ProjectType],
+) -> Dict[str, Dict[str, str | float]]:
     project_type_dict = {}
     for project_type in project_types:
         project_type_dict[project_type.name.lower()] = {
             "hourly_rate": project_type.hour_rate,
             "day_rate": project_type.day_rate,
-            "keywords": project_type.keywords
+            "keywords": project_type.keywords,
         }
     return project_type_dict

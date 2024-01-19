@@ -12,9 +12,9 @@ from typing import Iterator, Tuple
 from internal.chatgpt import ChatGPT
 from internal.data_types import Configuration, ProjectItemGSheet
 from internal.db import get_config_from_db
+from internal.gdrive import GoogleDrive
 from internal.gsheet import GoogleSheet
 from internal.utils import *
-from internal.gdrive import GoogleDrive
 
 logging.basicConfig(
     format="%(asctime)s %(message)s", datefmt="%m/%d/%Y %H:%M:%S", level=logging.INFO
@@ -22,7 +22,6 @@ logging.basicConfig(
 
 
 class EmailForwarder:
-
     def run_process(self) -> None:
         """
         Runs a single iteration to check for new emails and forward
@@ -31,27 +30,31 @@ class EmailForwarder:
         self.load_config()
 
         for email_msg in self.get_new_emails():
-            email_msg_text, body = self.construct_email_msg_for_chatgpt(
-                email_msg)
+            email_msg_text, body = self.construct_email_msg_for_chatgpt(email_msg)
             email_details = self.process_email(email_msg_text)
-            reciever_email, topic = self.chatgpt.get_reciever_email_and_topic_to_forward_to(
+            (
+                reciever_email,
+                topic,
+            ) = self.chatgpt.get_reciever_email_and_topic_to_forward_to(
                 email_msg_text,
                 self.config.receiver_emails,
                 self.config.prompt_forward_email,
             )
             if topic in ["order", "variation"]:
                 project, project_items = self.add_to_sheet(
-                    email_msg_text, email_details)
-                gdrive_url = self.add_to_drive(
-                    email_msg, project_items, project)
-                self.add_gdrive_url_to_sheet(
-                    gdrive_url, project, project_items)
-            self.forward_email(
-                reciever_email, email_details, email_msg
-            )
+                    email_msg_text, email_details
+                )
+                gdrive_url = self.add_to_drive(email_msg, project_items, project)
+                self.add_gdrive_url_to_sheet(gdrive_url, project, project_items)
+            self.forward_email(reciever_email, email_details, email_msg)
             logging.info("Email processing done.")
 
-    def add_to_drive(self, email_message: EmailMessage, project_items: List[ProjectItemGSheet], project: Project) -> str:
+    def add_to_drive(
+        self,
+        email_message: EmailMessage,
+        project_items: List[ProjectItemGSheet],
+        project: Project,
+    ) -> str:
         logging.info("Saving email and it's attachements to google drive")
         gdrive = GoogleDrive()
         return gdrive.add_email(email_message, project_items, project)
@@ -59,8 +62,7 @@ class EmailForwarder:
     def add_to_sheet(
         self, email_message_text: str, email_details: EmailDetails
     ) -> Tuple[Project, List[ProjectItemGSheet]]:
-        logging.info(
-            "Finding project based on name, plot and/or linked contacts")
+        logging.info("Finding project based on name, plot and/or linked contacts")
         project = self.chatgpt.get_project_to_add_to(
             email_message_text,
             email_details,
@@ -68,9 +70,18 @@ class EmailForwarder:
             self.config.prompt_project,
         )
         if project is None:
-            project = Project(name="Misc", phase=None, plot_range=None,
-                              linked_contacts=None, google_sheet_url_windows=self.config.misc_sheet_url, google_sheet_url_carpentry=None)
-        if not project.google_sheet_url_windows and not project.google_sheet_url_carpentry:
+            project = Project(
+                name="Misc",
+                phase=None,
+                plot_range=None,
+                linked_contacts=None,
+                google_sheet_url_windows=self.config.misc_sheet_url,
+                google_sheet_url_carpentry=None,
+            )
+        if (
+            not project.google_sheet_url_windows
+            and not project.google_sheet_url_carpentry
+        ):
             logging.error(
                 "No matching project and misc sheet url not set. Can't add project item to gsheet."
             )
@@ -78,8 +89,11 @@ class EmailForwarder:
         logging.info(f"Project matched: {project.name}")
         email_details.project_name = project.name
 
-        available_gsheet, gsheet_windows, gsheet_carpentry = self.get_google_sheets_for_project(
-            project)
+        (
+            available_gsheet,
+            gsheet_windows,
+            gsheet_carpentry,
+        ) = self.get_google_sheets_for_project(project)
         if available_gsheet == None:
             return project, []
         project_items = []
@@ -91,7 +105,7 @@ class EmailForwarder:
                 quantity=item.quantity,
                 no_of_days_or_hours=item.no_of_days_or_hours,
                 rate=item.rate,
-                item_type=item.item_type
+                item_type=item.item_type,
             )
             if item.item_type == "windows" and gsheet_windows:
                 gsheet_windows.insert_project_item(project_item)
@@ -105,32 +119,43 @@ class EmailForwarder:
             project_items.append(project_item)
         return project, project_items
 
-    def add_gdrive_url_to_sheet(self, gdrive_url: str, project: Project, project_items: List[ProjectItemGSheet]) -> None:
-        available_gsheet, gsheet_windows, gsheet_carpentry = self.get_google_sheets_for_project(
-            project)
+    def add_gdrive_url_to_sheet(
+        self, gdrive_url: str, project: Project, project_items: List[ProjectItemGSheet]
+    ) -> None:
+        (
+            available_gsheet,
+            gsheet_windows,
+            gsheet_carpentry,
+        ) = self.get_google_sheets_for_project(project)
         for project_item in project_items:
             try:
                 if project_item.item_type == "windows" and gsheet_windows:
                     gsheet_windows.insert_gdrive_link(gdrive_url, project_item)
                 elif project_item.item_type == "carpentry" and gsheet_carpentry:
-                    gsheet_carpentry.insert_gdrive_link(
-                        gdrive_url, project_item)
+                    gsheet_carpentry.insert_gdrive_link(gdrive_url, project_item)
                 else:
-                    available_gsheet.insert_gdrive_link(
-                        gdrive_url, project_item)
+                    available_gsheet.insert_gdrive_link(gdrive_url, project_item)
             except ValueError:
                 logging.error(
-                    f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist")
+                    f"Error insert gdrive url for project item {project_item.item_ref}. Item does not exist"
+                )
 
-    def get_google_sheets_for_project(self, project: Project) -> Tuple[GoogleSheet, GoogleSheet, GoogleSheet]:
+    def get_google_sheets_for_project(
+        self, project: Project
+    ) -> Tuple[GoogleSheet, GoogleSheet, GoogleSheet]:
         gsheet_windows = None
         gsheet_carpentry = None
         try:
-            if project.google_sheet_url_windows is not None and project.google_sheet_url_windows.strip() != "":
+            if (
+                project.google_sheet_url_windows is not None
+                and project.google_sheet_url_windows.strip() != ""
+            ):
                 gsheet_windows = GoogleSheet(project.google_sheet_url_windows)
-            if project.google_sheet_url_carpentry is not None and project.google_sheet_url_carpentry.strip() != "":
-                gsheet_carpentry = GoogleSheet(
-                    project.google_sheet_url_carpentry)
+            if (
+                project.google_sheet_url_carpentry is not None
+                and project.google_sheet_url_carpentry.strip() != ""
+            ):
+                gsheet_carpentry = GoogleSheet(project.google_sheet_url_carpentry)
         except PermissionError:
             logging.error(
                 f"Permission error accessing Gsheet for project {project.name}. Can't add project item"
@@ -164,7 +189,10 @@ class EmailForwarder:
         return email_details
 
     def forward_email(
-        self, reciever_email: ReceiverEmail, email_details: EmailDetails, email_message: EmailMessage
+        self,
+        reciever_email: ReceiverEmail,
+        email_details: EmailDetails,
+        email_message: EmailMessage,
     ) -> None:
         """
         Forwards the email to the given reciever. Modifies subject based on email details.
@@ -173,8 +201,7 @@ class EmailForwarder:
         subject_line = create_subject_line(email_details)
         logging.info(f"Got subject line from chatgpt {subject_line}")
 
-        new_subject = subject_line + \
-            " " + email_message["Subject"]
+        new_subject = subject_line + " " + email_message["Subject"]
         del email_message["Subject"]
         email_message["Subject"] = new_subject
         del email_message["To"]
@@ -183,7 +210,8 @@ class EmailForwarder:
         email_message["From"] = self.config.email
         if reciever_email.header:
             email_message = append_html_at_start_of_email(
-                reciever_email.header, email_message)
+                reciever_email.header, email_message
+            )
         self.send_email(email_message)
 
     def construct_email_msg_for_chatgpt(self, email_msg: Message) -> Tuple[str, str]:
@@ -213,8 +241,7 @@ class EmailForwarder:
         """
         An iterator to login to IMAP, yield new emails and logout
         """
-        mail = imaplib.IMAP4_SSL(
-            self.config.imap_host, int(self.config.imap_port))
+        mail = imaplib.IMAP4_SSL(self.config.imap_host, int(self.config.imap_port))
         rc, resp = mail.login(self.config.email, self.config.password)
         mail.select("Inbox")
         status, data = mail.search(None, "(UNSEEN)")

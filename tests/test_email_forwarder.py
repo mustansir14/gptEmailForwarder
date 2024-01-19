@@ -1,5 +1,6 @@
-from unittest import TestCase
 import pickle
+from unittest import TestCase
+
 from internal.utils import prepend_text_to_email
 
 
@@ -9,9 +10,7 @@ class TestEmailForwarder(TestCase):
             self.email_message = pickle.load(f)
 
     def test_prepend_text_to_email(self):
-
-        new_email_message = prepend_text_to_email(
-            "New text", self.email_message)
+        new_email_message = prepend_text_to_email("New text", self.email_message)
 
         print(new_email_message)
         assert "New text" in str(new_email_message)

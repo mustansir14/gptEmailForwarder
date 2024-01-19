@@ -2,9 +2,12 @@ from typing import List, Tuple
 
 import openai
 
-from internal.data_types import EmailDetails, Project, ProjectType, ReceiverEmail
-from internal.utils import (get_reciever_email_by_name, get_project_based_on_details,
-                            is_prompt_long, remove_middle_words, comma_seperated_to_list, create_project_type_dict)
+from internal.data_types import (EmailDetails, Project, ProjectType,
+                                 ReceiverEmail)
+from internal.utils import (comma_seperated_to_list, create_project_type_dict,
+                            get_project_based_on_details,
+                            get_reciever_email_by_name, is_prompt_long,
+                            remove_middle_words)
 
 
 class ChatGPT:
@@ -23,19 +26,48 @@ class ChatGPT:
 
         return response.choices[0].message["content"]
 
-    def get_email_details(self, email_message: str, prompt: str, project_types: List[ProjectType]) -> EmailDetails:
+    def get_email_details(
+        self, email_message: str, prompt: str, project_types: List[ProjectType]
+    ) -> EmailDetails:
         """
         Request chatgpt to extract email details for the given email message
         """
         project_type_dict = create_project_type_dict(project_types)
         while True:
-            prompt = prompt.replace("{email_message}", email_message).replace(
-                "{windows_hourly_rate}", str(project_type_dict["windows"]["hourly_rate"])).replace(
-                "{windows_day_rate}", str(project_type_dict["windows"]["day_rate"])).replace(
-                "{carpentry_hourly_rate}", str(project_type_dict["carpentry"]["hourly_rate"])).replace(
-                "{carpentry_day_rate}", str(project_type_dict["carpentry"]["day_rate"])).replace(
-                "{windows_keywords}", str(comma_seperated_to_list(project_type_dict["windows"]["keywords"]))).replace(
-                "{carpentry_keywords}", str(comma_seperated_to_list(project_type_dict["carpentry"]["keywords"])))
+            prompt = (
+                prompt.replace("{email_message}", email_message)
+                .replace(
+                    "{windows_hourly_rate}",
+                    str(project_type_dict["windows"]["hourly_rate"]),
+                )
+                .replace(
+                    "{windows_day_rate}", str(project_type_dict["windows"]["day_rate"])
+                )
+                .replace(
+                    "{carpentry_hourly_rate}",
+                    str(project_type_dict["carpentry"]["hourly_rate"]),
+                )
+                .replace(
+                    "{carpentry_day_rate}",
+                    str(project_type_dict["carpentry"]["day_rate"]),
+                )
+                .replace(
+                    "{windows_keywords}",
+                    str(
+                        comma_seperated_to_list(
+                            project_type_dict["windows"]["keywords"]
+                        )
+                    ),
+                )
+                .replace(
+                    "{carpentry_keywords}",
+                    str(
+                        comma_seperated_to_list(
+                            project_type_dict["carpentry"]["keywords"]
+                        )
+                    ),
+                )
+            )
             if is_prompt_long(prompt):
                 email_message = remove_middle_words(email_message)
             else:
